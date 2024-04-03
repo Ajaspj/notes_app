@@ -10,12 +10,17 @@ class NoteScreen extends StatefulWidget {
   State<NoteScreen> createState() => _NoteScreenState();
 }
 
-TextEditingController titleEditingController = TextEditingController();
-TextEditingController desEditingController = TextEditingController();
-TextEditingController dateEditingController = TextEditingController();
-int selectedColorIndex = 0;
-
 class _NoteScreenState extends State<NoteScreen> {
+  @override
+  void initState() {
+    NoteScreenController.getinitKeys();
+    super.initState();
+  }
+
+  TextEditingController titleEditingController = TextEditingController();
+  TextEditingController desEditingController = TextEditingController();
+  TextEditingController dateEditingController = TextEditingController();
+  int selectedColorIndex = 0;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,37 +34,38 @@ class _NoteScreenState extends State<NoteScreen> {
         ),
       ),
       body: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
             ListView.separated(
                 shrinkWrap: true,
-                itemBuilder: (context, index) => ListViewScreen(
-                      title: NoteScreenController.notesList[index]["title"],
-                      desc: NoteScreenController.notesList[index]["dis"],
-                      date: NoteScreenController.notesList[index]["date"],
-                      colorindex: NoteScreenController.notesList[index]
-                          ["colorIndex"],
-                      onDeletePres: () {
-                        NoteScreenController.delete(index);
-                        setState(() {});
-                      },
-                      oneditPres: () {
-                        titleEditingController.text =
-                            NoteScreenController.notesList[index]["title"];
-                        desEditingController.text =
-                            NoteScreenController.notesList[index]["dis"];
-                        dateEditingController.text =
-                            NoteScreenController.notesList[index]["date"];
-                        selectedColorIndex =
-                            NoteScreenController.notesList[index]["colorIndex"];
+                itemBuilder: (context, index) {
+                  final currentkey = NoteScreenController.notesListkeys[index];
+                  final currentElement =
+                      NoteScreenController.myBox.get(currentkey);
+                  return ListViewScreen(
+                    title: currentElement["title"],
+                    desc: currentElement["dis"],
+                    date: currentElement["date"],
+                    colorindex: currentElement["colorIndex"],
+                    onDeletePres: () {
+                      NoteScreenController.delete(currentkey);
+                      setState(() {});
+                    },
+                    oneditPres: () {
+                      titleEditingController.text = currentElement["title"];
+                      desEditingController.text = currentElement["dis"];
+                      dateEditingController.text = currentElement["date"];
+                      selectedColorIndex = currentElement["colorIndex"];
 
-                        customBottomSheet(isEdit: true, index: index);
-                      },
-                    ),
+                      customBottomSheet(isEdit: true, key: index);
+                    },
+                  );
+                },
                 separatorBuilder: (context, index) => SizedBox(
                       height: 10,
                     ),
-                itemCount: NoteScreenController.notesList.length)
+                itemCount: NoteScreenController.notesListkeys.length)
           ],
         ),
       ),
@@ -68,6 +74,7 @@ class _NoteScreenState extends State<NoteScreen> {
           titleEditingController.clear();
           desEditingController.clear();
           dateEditingController.clear();
+          // ignore: unused_local_variable
           int selectedColorIndex = 0;
           customBottomSheet(isEdit: false);
         },
@@ -76,7 +83,7 @@ class _NoteScreenState extends State<NoteScreen> {
     );
   }
 
-  Future<dynamic> customBottomSheet({int index = 0, isEdit = false}) {
+  Future<dynamic> customBottomSheet({int key = 0, isEdit = false}) {
     return showModalBottomSheet(
       backgroundColor: Colors.grey.withOpacity(.8),
       isScrollControlled: true,
@@ -178,17 +185,17 @@ class _NoteScreenState extends State<NoteScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   InkWell(
-                    onTap: () {
+                    onTap: () async {
                       setState(() {});
                       if (isEdit == true) {
                         NoteScreenController.edit(
-                            index: index,
+                            key: key,
                             title: titleEditingController.text,
                             date: dateEditingController.text,
                             des: desEditingController.text,
                             colorIndex: selectedColorIndex);
                       } else {
-                        NoteScreenController.addNote(
+                        await NoteScreenController.addNote(
                             title: titleEditingController.text,
                             date: dateEditingController.text,
                             des: desEditingController.text,
